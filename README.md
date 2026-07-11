@@ -1,2 +1,3 @@
-# Sarraf-bank-project
-bank project
+# Sarraf
+
+Peer-to-peer EUR ⇄ DZD escrow marketplace backend.
