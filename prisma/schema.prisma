@@ -1,0 +1,182 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  USER
+  ADMIN
+  SUPPORT
+}
+
+enum KycStatus {
+  NOT_STARTED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum Currency {
+  DZD
+  EUR
+}
+
+enum OrderStatus {
+  LISTED
+  MATCHED
+  WAITING_FOR_DZD
+  PROOF_UPLOADED
+  SELLER_CONFIRMED
+  EUR_RELEASED
+  COMPLETED
+  DISPUTED
+  CANCELLED
+}
+
+model User {
+  id              String    @id @default(uuid())
+  email           String    @unique
+  passwordHash    String
+  phoneNumber     String    @unique
+  role            Role      @default(USER)
+
+  // Reputation — safe to keep directly on User, not sensitive
+  trustScore      Int       @default(100)
+  totalTrades     Int       @default(0)
+
+  // KYC is a STATUS reference only — no raw ID/biometric data lives here
+  kycStatus       KycStatus @default(NOT_STARTED)
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  wallets         Wallet[]
+  kyc             KycVerification?
+  paymentAccounts PaymentAccount[]
+  offersCreated   Offer[]   @relation("SellerOffers")
+  ordersAsBuyer   Order[]   @relation("BuyerOrders")
+  ordersAsSeller  Order[]   @relation("SellerOrders")
+  disputes        Dispute[]
+  auditLogs       AuditLog[]
+}
+
+// One row per user. Holds ONLY a reference to the KYC provider's
+// record — never raw ID numbers, document images, or biometric data.
+// Those stay inside the KYC provider's own compliant storage (Sumsub/
+// Onfido/Veriff etc). This is what keeps your DB out of scope for
+// handling regulated identity documents directly.
+model KycVerification {
+  id                String    @id @default(uuid())
+  userId            String    @unique
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  provider          String    // e.g. "sumsub"
+  providerApplicantId String  @unique // the provider's own reference ID
+  status            KycStatus @default(PENDING)
+  reviewedAt        DateTime?
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+// Payment routing handles. The account number itself is stored
+// ENCRYPTED (encrypt in application code before writing — see note
+// below). Only a masked display value ("**** 4821") is ever shown
+// to the frontend directly.
+model PaymentAccount {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type            String   // "CCP", "EDAHABIA", "PAYSERA", "WISE", "REVOLUT"
+  currency        Currency
+  encryptedValue  String   // ciphertext — never store plaintext account numbers
+  maskedDisplay   String   // e.g. "CCP •••• 7412" — safe to show in UI
+  isVerified      Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Wallet {
+  id           String   @id @default(uuid())
+  userId       String
+  currency     Currency
+  balanceCents Int      @default(0) // available
+  lockedCents  Int      @default(0) // reserved in active escrow
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, currency])
+}
+
+model Offer {
+  id             String   @id @default(uuid())
+  userId         String
+  side           String   // "BUY" or "SELL"
+  fromCurrency   Currency
+  toCurrency     Currency
+  rate           Int      // rate * 100, e.g. 320.50 -> 32050
+  amountCents    Int
+  minAmountCents Int
+  maxAmountCents Int
+  paymentMethod  String
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  user           User     @relation("SellerOffers", fields: [userId], references: [id])
+  orders         Order[]
+}
+
+model Order {
+  id           String      @id @default(uuid())
+  offerId      String
+  buyerId      String
+  sellerId     String
+  amountCents  Int
+  fiatAmount   Int
+  status       OrderStatus @default(LISTED)
+
+  // Reference only — the actual receipt image lives in encrypted
+  // object storage (e.g. private S3 bucket), not in the database.
+  receiptStorageKey String?
+  ocrVerified       Boolean @default(false)
+
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  offer        Offer       @relation(fields: [offerId], references: [id])
+  buyer        User        @relation("BuyerOrders", fields: [buyerId], references: [id])
+  seller       User        @relation("SellerOrders", fields: [sellerId], references: [id])
+  disputes     Dispute[]
+}
+
+model Dispute {
+  id          String   @id @default(uuid())
+  orderId     String
+  raisedById  String
+  reason      String
+  evidenceStorageKey String?
+  isResolved  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  order       Order    @relation(fields: [orderId], references: [id])
+  raisedBy    User     @relation(fields: [raisedById], references: [id])
+}
+
+// Append-only. Application code must only INSERT here — never
+// update or delete audit rows.
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  action    String
+  details   String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
