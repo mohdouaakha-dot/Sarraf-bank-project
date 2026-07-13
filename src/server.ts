@@ -1,24 +1,31 @@
-import express from 'express';
-import type { Request, Response } from 'express'; // This tells Node these are just types, not running code!
+﻿import express from 'express';
+import type { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import authRoutes from './routes/auth.routes.ts';
+import paymentRoutes from './routes/payment.routes.ts';
+import offerRoutes from './routes/offer.routes.ts';
+import walletRoutes from './routes/wallet.routes.ts';
+import orderRoutes from './routes/order.routes.ts';
 
-// Load environment variables from your .env file
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(cors());          
-app.use(express.json());  
+app.use(cors());
+app.use(express.json());
 
-// A basic "Health Check" route to test if the server is alive
+app.use('/api/auth', authRoutes);
+app.use('/api/payment', paymentRoutes);
+app.use('/api/offers', offerRoutes);
+app.use('/api/wallet', walletRoutes);
+app.use('/api/orders', orderRoutes);
+
 app.get('/', (req: Request, res: Response) => {
-  res.json({ message: "Welcome to the Sarraf Marketplace API! The server is alive and running." });
+  res.json({ message: "Welcome to the Sarraf Marketplace API" });
 });
 
-// Start listening for incoming traffic
 app.listen(PORT, () => {
-  console.log(`🚀 Server is successfully running on http://localhost:${PORT}`);
+  console.log(`Server is successfully running on http://localhost:${PORT}`);
 });
