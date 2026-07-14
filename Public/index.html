@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sarraf Terminal Engine</title>
+    <style>
+        :root {
+            --bg-main: #0b0f19;
+            --bg-card: #111827;
+            --bg-input: #1f2937;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --success: #10b981;
+            --danger: #ef4444;
+            --border: #374151;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
+        body { background-color: var(--bg-main); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
+
+        /* Sidebar Identity Controls */
+        .sidebar { width: 300px; background-color: var(--bg-card); border-right: 1px solid var(--border); padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+        .logo { font-size: 1.5rem; font-weight: bold; color: var(--primary); margin-bottom: 10px; }
+        .context-card { background: var(--bg-input); padding: 15px; border-radius: 8px; border: 2px solid transparent; cursor: pointer; transition: 0.2s; }
+        .context-card.active { border-color: var(--primary); background: #1e293b; }
+        .status-dot { inline-size: 10px; block-size: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+
+        /* Main Workspace Dash */
+        .workspace { flex: 1; padding: 25px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .card { background-color: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+        .card-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+
+        /* Forms & Interactive Items */
+        .input-group { margin-bottom: 15px; }
+        label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 5px; }
+        input, select { width: 100%; padding: 10px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 6px; color: white; font-size: 1rem; }
+        button { width: 100%; padding: 12px; background: var(--primary); border: none; border-radius: 6px; color: white; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button:hover { background: var(--primary-hover); }
+        button.secondary { background: var(--bg-input); border: 1px solid var(--border); }
+        button.secondary:hover { background: var(--border); }
+
+        /* Data Tables & Lists */
+        .data-table { width: 100%; border-collapse: collapse; text-align: left; margin-top: 10px; }
+        .data-table th, .data-table td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
+        .data-table th { color: var(--text-muted); font-weight: normal; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
+        .badge.success { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+        .badge.pending { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+
+        /* Live Operations Stream Sidebar */
+        .stream-panel { width: 350px; background-color: #070a12; border-left: 1px solid var(--border); padding: 20px; display: flex; flex-direction: column; }
+        .log-box { flex: 1; background: #020408; font-family: 'Courier New', Courier, monospace; font-size: 0.85rem; padding: 15px; border-radius: 6px; border: 1px solid var(--border); overflow-y: auto; color: #34d399; }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR CONFIGURATION -->
+    <div class="sidebar">
+        <div class="logo">S Sarraf Terminal</div>
+        <p style="color: var(--text-muted); font-size: 0.85rem;">ACTIVE IDENTITY CONTEXT</p>
+        
+        <div class="context-card active" id="identity-seller" onclick="switchIdentity('user_test_seller')">
+            <div><span class="status-dot" style="background: var(--success);"></span><strong>Acting as SELLER</strong></div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 5px;">ID: user_test_seller</div>
+        </div>
+
+        <div class="context-card" id="identity-buyer" onclick="switchIdentity('user_test_buyer')">
+            <div><span class="status-dot" style="background: var(--primary);"></span><strong>Acting as BUYER</strong></div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 5px;">ID: user_test_buyer</div>
+        </div>
+
+        <div style="margin-top: auto;">
+            <button class="secondary" onclick="seedDatabase()">1. Initialize & Seed DB</button>
+            <button class="secondary" style="margin-top: 10px;" onclick="refreshDashboard()">🔄 Live Refresh Data</button>
+        </div>
+    </div>
+
+    <!-- MAIN WORKSPACE GRAPHICS -->
+    <div class="workspace">
+        <!-- TOP SECTION: LEDGER WALLETS -->
+        <div class="grid-2">
+            <div class="card">
+                <div class="card-title">💵 EUR Core Balance <span style="color: var(--success);">Available</span></div>
+                <h1 id="eur-balance">€0.00</h1>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 5px;">In Escrow: <span id="eur-locked">€0.00</span></p>
+                <button style="margin-top: 15px;" onclick="triggerDeposit('EUR')">+ Deposit €500</button>
+            </div>
+            <div class="card">
+                <div class="card-title">📐 DZD Core Balance <span style="color: var(--success);">Available</span></div>
+                <h1 id="dzd-balance">0.00 DA</h1>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 5px;">In Escrow: <span id="dzd-locked">0.00 DA</span></p>
+                <button style="margin-top: 15px;" onclick="triggerDeposit('DZD')">+ Deposit 50k DA</button>
+            </div>
+        </div>
+
+        <!-- MID SECTION: BROADCAST FORM & TRANSACTION MATRIX -->
+        <div class="card">
+            <div class="card-title">📢 Broadcast Market Order Book</div>
+            <div class="grid-2" style="grid-template-columns: 2fr 1fr; gap: 15px; align-items: end;">
+                <div class="input-group" style="margin: 0;">
+                    <label>AMOUNT TO ESCROW (EUR)</label>
+                    <input type="number" id="form-amount" value="100">
+                </div>
+                <div class="input-group" style="margin: 0;">
+                    <label>EXCHANGE RATE (1€ = ? DA)</label>
+                    <input type="number" id="form-rate" value="240">
+                </div>
+            </div>
+            <button style="margin-top: 15px;" onclick="broadcastOffer()">Broadcast Sell & Lock</button>
+        </div>
+
+        <!-- BOTTOM SECTION: LIVE TRANSFERS LIFECYCLE -->
+        <div class="card">
+            <div class="card-title">📦 Your P2P Escrow Lifecycle Processes</div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Role/Counterparty</th>
+                        <th>Value Amount</th>
+                        <th>Exchange Rate</th>
+                        <th>Current State</th>
+                        <th>Action Processing Interface</th>
+                    </tr>
+                </thead>
+                <tbody id="orders-table-body">
+                    <!-- Dynamic Rows Insertion -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- OPERATIONS STREAM SIDEBAR -->
+    <div class="stream-panel">
+        <div class="card-title" style="font-size: 0.9rem; letter-spacing: 1px;">SYSTEM OPERATIONS STREAM</div>
+        <div class="log-box" id="log-terminal">Awaiting setup sequence...</div>
+    </div>
+
+    <!-- FRONTEND RUNTIME ENGINE CONNECTOR -->
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        let currentUserId = 'user_test_seller';
+
+        function logToTerminal(message, type = 'info') {
+            const terminal = document.getElementById('log-terminal');
+            const timestamp = new Date().toLocaleTimeString();
+            let color = '#34d399';
+            if (type === 'error') color = '#ef4444';
+            if (type === 'success') color = '#60a5fa';
+
+            terminal.innerHTML = `<div style="color: ${color}">[${timestamp}] ${message}</div>` + terminal.innerHTML;
+        }
+
+        function switchIdentity(userId) {
+            currentUserId = userId;
+            document.getElementById('identity-seller').classList.toggle('active', userId === 'user_test_seller');
+            document.getElementById('identity-buyer').classList.toggle('active', userId === 'user_test_buyer');
+            logToTerminal(`Switched workspace simulation context to: **${userId.toUpperCase()}**`, 'success');
+            refreshDashboard();
+        }
+
+// 1. DATA REFRESH RETRIEVAL FROM EXPRESS POSTGRES
+        async function refreshDashboard() {
+            try {
+                // Fetch Wallets
+                const walletRes = await fetch(`${API_BASE}/wallets/${currentUserId}`);
+                if (walletRes.ok) {
+                    const data = await walletRes.json();
+                    const eurWallet = data.wallets.find(w => w.currency === 'EUR') || { balanceCents: 0, lockedCents: 0 };
+                    const dzdWallet = data.wallets.find(w => w.currency === 'DZD') || { balanceCents: 0, lockedCents: 0 };
+
+                    document.getElementById('eur-balance').innerText = `€${(eurWallet.balanceCents / 100).toFixed(2)}`;
+                    document.getElementById('eur-locked').innerText = `€${(eurWallet.lockedCents / 100).toFixed(2)}`;
+                    document.getElementById('dzd-balance').innerText = `${(dzdWallet.balanceCents / 100).toFixed(2)} DA`;
+                    document.getElementById('dzd-locked').innerText = `${(dzdWallet.lockedCents / 100).toFixed(2)} DA`;
+                }
+
+                // Fetch Offers from the active market book instead of Orders
+                const offersRes = await fetch(`${API_BASE}/offers`);
+                if (offersRes.ok) {
+                    const data = await offersRes.json();
+                    const tbody = document.getElementById('orders-table-body');
+                    tbody.innerHTML = '';
+
+                    // Check data.offers array returned by listActiveOffers inside offer.controller.ts
+                    if (!data.offers || data.offers.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted)">0 Active Escrow Lifecycle Contracts Detected</td></tr>`;
+                    } else {
+                        data.offers.forEach(offer => {
+                            const isOwner = offer.userId === currentUserId;
+                            const contextRole = offer.side === 'SELL' ? 'SELLER' : 'BUYER';
+                            
+                            let actionButton = '';
+                            if (isOwner) {
+                                actionButton = `<span style="color:var(--text-muted); font-size:0.85rem;">Your Offer (Broadcasting)</span>`;
+                            } else {
+                                // If acting as BUYER looking at a SELLER's offer, allow them to match it
+                                actionButton = `<button style="padding:5px 10px; font-size:0.8rem; background:var(--success)" onclick="logToTerminal('Matching logic placeholder clicked', 'info')">Accept & Lock DZD</button>`;
+                            }
+
+                            tbody.innerHTML += `
+                                <tr>
+                                    <td><strong>${contextRole}</strong> (${offer.userId === 'user_test_seller' ? 'Seller' : 'Buyer'})</td>
+                                    <td>€${(offer.amountCents / 100).toFixed(2)}</td>
+                                    <td>${offer.rate / 100} DA</td>
+                                    <td><span class="badge success">ACTIVE</span></td>
+                                    <td>${actionButton}</td>
+                                </tr>
+                            `;
+                        });
+                    }
+                }
+                logToTerminal(`Ledger Synchronized with PostgreSQL State successfully.`, 'info');
+            } catch (err) {
+                logToTerminal(`Synchronization Fail: ${err.message}`, 'error');
+            }
+        }
+
+        // 2. TRIGGER ACTIONS ENGINE CONNECTORS
+        async function triggerDeposit(currency) {
+            const amountVal = currency === 'EUR' ? 50000 : 5000000; // sending cents directly to match backend code!
+            try {
+                const response = await fetch(`${API_BASE}/wallets/test-deposit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: currentUserId, currency, amountCents: amountVal })
+                });
+                const resData = await response.json();
+                if (response.ok) {
+                    logToTerminal(`[POST] /wallets/test-deposit -> Success Matrix Loaded!`, 'success');
+                    refreshDashboard();
+                } else {
+                    logToTerminal(`[POST] Deposit Rejected: ${resData.error}`, 'error');
+                }
+            } catch (error) {
+                logToTerminal(`Connection Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function broadcastOffer() {
+            const amountCents = parseFloat(document.getElementById('form-amount').value) * 100;
+            const rate = parseFloat(document.getElementById('form-rate').value) * 100;
+
+            try {
+                const response = await fetch(`${API_BASE}/offers`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: currentUserId,
+                        side: 'SELL',
+                        fromCurrency: 'EUR',
+                        toCurrency: 'DZD',
+                        rate: rate,
+                        amountCents: amountCents
+                    })
+                });
+                if (response.ok) {
+                    logToTerminal(`[POST] /offers -> Sell Order Broadcasted and Core Funds Locked in Escrow!`, 'success');
+                    // Automatically simulate buying step for development mapping if needed
+                    refreshDashboard();
+                } else {
+                    const err = await response.json();
+                    logToTerminal(`Broadcast Rejected: ${err.error}`, 'error');
+                }
+            } catch (x) { logToTerminal(`Error: ${x.message}`, 'error'); }
+        }
+
+        async function uploadPaymentProof(orderId) {
+            try {
+                const response = await fetch(`${API_BASE}/orders/${orderId}/proof`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ receiptStorageKey: "encrypted_s3_reference_key_prod_09" })
+                });
+                if(response.ok) {
+                    logToTerminal(`[POST] Proof Receipt Reference Added to Ledger.`, 'success');
+                    refreshDashboard();
+                }
+            } catch(e) { logToTerminal(e.message, 'error'); }
+        }
+
+        async function confirmReleaseEscrow(orderId) {
+            try {
+                const response = await fetch(`${API_BASE}/orders/${orderId}/confirm`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sellerId: currentUserId })
+                });
+                if(response.ok) {
+                    logToTerminal(`[POST] Escrow Settled! EUR balance transferred to buyer instantly.`, 'success');
+                    refreshDashboard();
+                }
+            } catch(e) { logToTerminal(e.message, 'error'); }
+        }
+
+async function seedDatabase() {
+    logToTerminal("Initializing development users inside PostgreSQL...", 'info');
+    
+    try {
+        // 1. Change to /auth/register
+        const resSeller = await fetch(`${API_BASE}/auth/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id: "user_test_seller",
+                email: "seller@test.com",
+                password: "password123",
+                phone: "0123456789"
+            })
+        });
+
+        // 2. Change to /auth/register
+        const resBuyer = await fetch(`${API_BASE}/auth/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id: "user_test_buyer",
+                email: "buyer@test.com",
+                password: "password123",
+                phone: "0987654321"
+            })
+        });
+
+        logToTerminal("Dev accounts initialized in DB. Seeding initial funds...", 'success');
+        
+        await triggerDeposit('EUR'); 
+        switchIdentity('user_test_buyer');
+        await triggerDeposit('DZD'); 
+        switchIdentity('user_test_seller'); 
+        
+    } catch (error) {
+        logToTerminal(`Seeding failed: ${error.message}`, 'error');
+    }
+}
+
+        // Initialize display lifecycle loop
+        window.onload = refreshDashboard;
+    </script>
+</body>
+</html>
