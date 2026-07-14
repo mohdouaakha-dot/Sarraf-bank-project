@@ -15,12 +15,14 @@ const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
+app.use(express.static('public'));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/offers', offerRoutes);
-app.use('/api/wallet', walletRoutes);
+app.use('/api/wallets', walletRoutes);
 app.use('/api/orders', orderRoutes);
+
 
 app.get('/', (req: Request, res: Response) => {
   res.json({ message: "Welcome to the Sarraf Marketplace API" });

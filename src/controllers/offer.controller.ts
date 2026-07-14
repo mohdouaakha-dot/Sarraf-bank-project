@@ -3,8 +3,6 @@ import prisma from '../prisma.ts';
 import { reserveFunds, releaseFunds } from '../services/wallet.service.ts';
 
 // POST /api/offers
-// Creates a sell offer AND reserves the seller's funds in the same logical
-// step. If there isn't enough available balance, nothing gets created.
 export const createOffer = async (req: Request, res: Response) => {
   try {
     const { userId, side, fromCurrency, toCurrency, rate, amountCents, minAmountCents, maxAmountCents, paymentMethod } = req.body;
@@ -13,16 +11,21 @@ export const createOffer = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Only SELL offers lock funds up front — a BUY offer just advertises
-    // intent and doesn't touch the wallet until it's matched.
     if (side === 'SELL') {
       await reserveFunds(userId, fromCurrency, amountCents);
     }
 
     const offer = await prisma.offer.create({
       data: {
-        userId, side, fromCurrency, toCurrency, rate,
-        amountCents, minAmountCents, maxAmountCents, paymentMethod,
+        userId, 
+        side, 
+        fromCurrency, 
+        toCurrency, 
+        rate: parseFloat(rate), 
+        amountCents: parseInt(amountCents), 
+        minAmountCents: minAmountCents ? parseInt(minAmountCents) : parseInt(amountCents), 
+        maxAmountCents: maxAmountCents ? parseInt(maxAmountCents) : parseInt(amountCents), 
+        paymentMethod: paymentMethod || 'CASH', 
       },
     });
 
@@ -59,9 +62,14 @@ export const cancelOffer = async (req: Request, res: Response) => {
 
 // GET /api/offers
 export const listActiveOffers = async (_req: Request, res: Response) => {
-  const offers = await prisma.offer.findMany({
-    where: { isActive: true },
-    orderBy: { createdAt: 'desc' },
-  });
-  return res.status(200).json({ success: true, offers });
+  try {
+    const offers = await prisma.offer.findMany({
+      where: { isActive: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    return res.status(200).json({ success: true, offers });
+  } catch (error) {
+    console.error('Error listing offers:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
 };
