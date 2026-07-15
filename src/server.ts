@@ -7,6 +7,7 @@ import paymentRoutes from './routes/payment.routes.ts';
 import offerRoutes from './routes/offer.routes.ts';
 import walletRoutes from './routes/wallet.routes.ts';
 import orderRoutes from './routes/order.routes.ts';
+import kycRoutes from './routes/kyc.routes.ts';
 
 dotenv.config();
 
@@ -22,6 +23,7 @@ app.use('/api/payment', paymentRoutes);
 app.use('/api/offers', offerRoutes);
 app.use('/api/wallets', walletRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/kyc', kycRoutes);
 
 
 app.get('/', (req: Request, res: Response) => {

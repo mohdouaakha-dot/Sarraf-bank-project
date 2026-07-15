@@ -7,16 +7,14 @@ const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret';
 
 export const register = async (req: Request, res: Response): Promise<Response> => {
   try {
-    // 1. Destructure id if passed from the dev seeder, and handle phone/phoneNumber mapping
-    const { id, email, password, phone, phoneNumber } = req.body;
-    const finalPhone = phoneNumber || phone;
+    const { firstName, lastName, email, password, phoneNumber } = req.body;
 
-    if (!email || !password || !finalPhone) {
+    if (!firstName || !lastName || !email || !password || !phoneNumber) {
       return res.status(400).json({ error: 'Missing required fields.' });
     }
 
     const existingUser = await prisma.user.findFirst({
-      where: { OR: [{ email }, { phoneNumber: finalPhone }] }
+      where: { OR: [{ email }, { phoneNumber }] }
     });
 
     if (existingUser) {
@@ -28,10 +26,11 @@ export const register = async (req: Request, res: Response): Promise<Response> =
     const newUser = await prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
         data: {
-          ...(id ? { id } : {}), // 2. Inject the custom ID if seeding
+          firstName,
+          lastName,
           email,
           passwordHash,
-          phoneNumber: finalPhone,
+          phoneNumber,
           wallets: {
             create: [
               { currency: 'DZD', balanceCents: 0, lockedCents: 0 },
@@ -73,7 +72,7 @@ export const login = async (req: Request, res: Response): Promise<Response> => {
     return res.json({
       message: 'Login successful.',
       token,
-      user: { id: user.id, email: user.email, role: user.role, kycStatus: user.kycStatus }
+      user: { id: user.id, firstName: user.firstName, lastName: user.lastName, email: user.email, role: user.role, kycStatus: user.kycStatus }
     });
   } catch (error: any) {
     return res.status(500).json({ error: error.message || 'Login failed.' });

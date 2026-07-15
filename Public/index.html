@@ -1,343 +1,452 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sarraf Terminal Engine</title>
-    <style>
-        :root {
-            --bg-main: #0b0f19;
-            --bg-card: #111827;
-            --bg-input: #1f2937;
-            --text-main: #f3f4f6;
-            --text-muted: #9ca3af;
-            --primary: #3b82f6;
-            --primary-hover: #2563eb;
-            --success: #10b981;
-            --danger: #ef4444;
-            --border: #374151;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sarraf — Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0E1B2A; --ink-2:#16283C; --paper:#F4F1E8; --paper-2:#EAE5D6;
+    --gold:#C9A24B; --green:#1E7A5C; --coral:#D9584F; --slate:#586374;
+    --line:rgba(14,27,42,0.1); --line-dark:rgba(244,241,232,0.14);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:'Inter',sans-serif; font-size:14px;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  h1,h2,h3{font-family:'Fraunces',serif; margin:0;}
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
-        body { background-color: var(--bg-main); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
+  header{background:var(--ink); color:var(--paper); border-bottom:1px solid var(--line-dark);}
+  .header-inner{max-width:1120px; margin:0 auto; padding:16px 28px; display:flex; justify-content:space-between; align-items:center;}
+  .brand{display:flex; align-items:center; gap:9px; font-family:'Fraunces',serif; font-size:19px; font-weight:600;}
+  .brand svg{width:24px; height:24px;}
+  .headerRight{display:flex; align-items:center; gap:16px;}
+  .kycpill{font-family:'IBM Plex Mono',monospace; font-size:10.5px; padding:4px 10px; border-radius:20px; font-weight:600; letter-spacing:.03em;}
+  .kycpill.PENDING{background:rgba(201,162,75,.18); color:#e0bd6f;}
+  .kycpill.NOT_STARTED{background:rgba(217,88,79,.18); color:#f0a49d;}
+  .kycpill.VERIFIED{background:rgba(30,122,92,.22); color:#6fcdaa;}
+  .userchip{font-size:13px; color:var(--paper-2);}
+  .btn-logout{background:none; border:1px solid var(--line-dark); color:var(--paper); padding:7px 14px; border-radius:5px; font-size:12.5px; font-weight:600; cursor:pointer;}
+  .btn-logout:hover{border-color:var(--gold);}
 
-        /* Sidebar Identity Controls */
-        .sidebar { width: 300px; background-color: var(--bg-card); border-right: 1px solid var(--border); padding: 20px; display: flex; flex-direction: column; gap: 20px; }
-        .logo { font-size: 1.5rem; font-weight: bold; color: var(--primary); margin-bottom: 10px; }
-        .context-card { background: var(--bg-input); padding: 15px; border-radius: 8px; border: 2px solid transparent; cursor: pointer; transition: 0.2s; }
-        .context-card.active { border-color: var(--primary); background: #1e293b; }
-        .status-dot { inline-size: 10px; block-size: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+  .wrap{max-width:1120px; margin:0 auto; padding:32px 28px;}
+  .authwrap{max-width:420px; margin:80px auto; padding:0 20px;}
 
-        /* Main Workspace Dash */
-        .workspace { flex: 1; padding: 25px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .card { background-color: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
-        .card-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+  .card{background:#fff; border:1px solid var(--line); border-radius:10px; padding:24px; margin-bottom:22px;}
+  .card h2{font-size:16px; font-weight:600; margin-bottom:4px;}
+  .card .sub{color:var(--slate); font-size:12.5px; margin-bottom:18px;}
 
-        /* Forms & Interactive Items */
-        .input-group { margin-bottom: 15px; }
-        label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 5px; }
-        input, select { width: 100%; padding: 10px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 6px; color: white; font-size: 1rem; }
-        button { width: 100%; padding: 12px; background: var(--primary); border: none; border-radius: 6px; color: white; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        button:hover { background: var(--primary-hover); }
-        button.secondary { background: var(--bg-input); border: 1px solid var(--border); }
-        button.secondary:hover { background: var(--border); }
+  label{display:block; font-size:11.5px; font-weight:600; color:var(--slate); text-transform:uppercase; letter-spacing:.04em; margin:12px 0 5px;}
+  label:first-child{margin-top:0;}
+  input,select{
+    width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:6px;
+    font-family:'IBM Plex Mono',monospace; font-size:13.5px; background:#fff; color:var(--ink);
+  }
+  input:focus,select:focus{outline:none; border-color:var(--gold);}
+  input[type=file]{font-family:'Inter',sans-serif; font-size:12.5px; padding:8px;}
+  .row{display:flex; gap:12px;}
+  .row > div{flex:1;}
+  button{
+    font-family:'Inter',sans-serif; font-weight:600; font-size:13px; border:none;
+    padding:11px 18px; border-radius:6px; cursor:pointer; transition:opacity .15s;
+  }
+  button:hover{opacity:.88;}
+  button:disabled{opacity:.4; cursor:not-allowed;}
+  .btn-primary{background:var(--ink); color:#fff;}
+  .btn-gold{background:var(--gold); color:var(--ink);}
+  .btn-green{background:var(--green); color:#fff;}
+  .btn-ghost{background:none; border:1px solid var(--line); color:var(--ink);}
+  .btn-block{width:100%; margin-top:18px;}
 
-        /* Data Tables & Lists */
-        .data-table { width: 100%; border-collapse: collapse; text-align: left; margin-top: 10px; }
-        .data-table th, .data-table td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
-        .data-table th { color: var(--text-muted); font-weight: normal; }
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
-        .badge.success { background: rgba(16, 185, 129, 0.2); color: var(--success); }
-        .badge.pending { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+  .tabbar{display:flex; gap:4px; margin-bottom:24px; border-bottom:1px solid var(--line);}
+  .tabbtn{background:none; border:none; padding:11px 16px; font-weight:600; font-size:13px; color:var(--slate); cursor:pointer; border-bottom:2px solid transparent;}
+  .tabbtn.active{color:var(--ink); border-bottom-color:var(--gold);}
+  .tabpane{display:none;}
+  .tabpane.active{display:block;}
 
-        /* Live Operations Stream Sidebar */
-        .stream-panel { width: 350px; background-color: #070a12; border-left: 1px solid var(--border); padding: 20px; display: flex; flex-direction: column; }
-        .log-box { flex: 1; background: #020408; font-family: 'Courier New', Courier, monospace; font-size: 0.85rem; padding: 15px; border-radius: 6px; border: 1px solid var(--border); overflow-y: auto; color: #34d399; }
-    </style>
+  .wallet-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  .wcard{border:1px solid var(--line); border-radius:8px; padding:18px;}
+  .wcard .k{font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--slate); margin-bottom:8px;}
+  .wcard .v{font-family:'IBM Plex Mono',monospace; font-size:24px; font-weight:600;}
+  .wcard .locked{font-size:12px; color:var(--slate); margin-top:4px;}
+
+  .offer,.order{border:1px solid var(--line); border-radius:8px; padding:14px 16px; margin-bottom:10px;}
+  .offer .top,.order .top{display:flex; justify-content:space-between; align-items:center;}
+  .amt{font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:15px;}
+  .meta{font-size:11.5px; color:var(--slate); margin-top:4px;}
+  .status{font-family:'IBM Plex Mono',monospace; font-size:10px; padding:3px 9px; border-radius:20px; font-weight:700; letter-spacing:.02em;}
+  .status.MATCHED,.status.WAITING_FOR_DZD,.status.LISTED{background:rgba(201,162,75,.15); color:#a9822f;}
+  .status.PROOF_UPLOADED{background:rgba(30,90,180,.1); color:#2a5db0;}
+  .status.COMPLETED{background:rgba(30,122,92,.13); color:var(--green);}
+  .status.DISPUTED{background:rgba(217,88,79,.13); color:var(--coral);}
+  .status.PENDING{background:rgba(201,162,75,.15); color:#a9822f;}
+  .status.NOT_STARTED{background:rgba(217,88,79,.13); color:var(--coral);}
+  .status.VERIFIED{background:rgba(30,122,92,.13); color:var(--green);}
+  .empty{color:var(--slate); font-size:13px; padding:14px 0; text-align:center;}
+
+  .kycbanner{border:1px solid rgba(217,88,79,.3); background:rgba(217,88,79,.06); border-radius:8px; padding:14px 16px; margin-bottom:22px; display:flex; justify-content:space-between; align-items:center; gap:16px;}
+  .kycbanner p{margin:0; font-size:13px;}
+  .kycbanner b{color:var(--coral);}
+
+  #log{background:var(--ink); color:#c9d4de; font-family:'IBM Plex Mono',monospace; font-size:11px;
+    padding:14px; border-radius:8px; height:160px; overflow-y:auto;}
+  .logline{margin-bottom:5px; padding-bottom:5px; border-bottom:1px solid var(--line-dark);}
+  .logline.ok{color:#7fd9ac;} .logline.err{color:#ff9b91;}
+
+  .error-msg{color:var(--coral); font-size:12.5px; margin-top:10px;}
+  .hint{font-size:11.5px; color:var(--slate); margin-top:6px;}
+</style>
 </head>
 <body>
 
-    <!-- SIDEBAR CONFIGURATION -->
-    <div class="sidebar">
-        <div class="logo">S Sarraf Terminal</div>
-        <p style="color: var(--text-muted); font-size: 0.85rem;">ACTIVE IDENTITY CONTEXT</p>
-        
-        <div class="context-card active" id="identity-seller" onclick="switchIdentity('user_test_seller')">
-            <div><span class="status-dot" style="background: var(--success);"></span><strong>Acting as SELLER</strong></div>
-            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 5px;">ID: user_test_seller</div>
-        </div>
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="18" stroke="#C9A24B" stroke-width="2"/><path d="M13 20.5L17.5 25L27 15" stroke="#C9A24B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Sarraf
+    </div>
+    <div class="headerRight" id="headerRight" style="display:none;">
+      <span class="userchip" id="userChip"></span>
+      <span class="kycpill" id="kycPill"></span>
+      <button class="btn-logout" onclick="logout()">Log out</button>
+    </div>
+  </div>
+</header>
 
-        <div class="context-card" id="identity-buyer" onclick="switchIdentity('user_test_buyer')">
-            <div><span class="status-dot" style="background: var(--primary);"></span><strong>Acting as BUYER</strong></div>
-            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 5px;">ID: user_test_buyer</div>
-        </div>
-
-        <div style="margin-top: auto;">
-            <button class="secondary" onclick="seedDatabase()">1. Initialize & Seed DB</button>
-            <button class="secondary" style="margin-top: 10px;" onclick="refreshDashboard()">🔄 Live Refresh Data</button>
-        </div>
+<div class="authwrap" id="authScreen">
+  <div class="card">
+    <div class="tabbar">
+      <button class="tabbtn active" data-authtab="login" onclick="switchAuthTab('login')">Log in</button>
+      <button class="tabbtn" data-authtab="register" onclick="switchAuthTab('register')">Create account</button>
     </div>
 
-    <!-- MAIN WORKSPACE GRAPHICS -->
-    <div class="workspace">
-        <!-- TOP SECTION: LEDGER WALLETS -->
-        <div class="grid-2">
-            <div class="card">
-                <div class="card-title">💵 EUR Core Balance <span style="color: var(--success);">Available</span></div>
-                <h1 id="eur-balance">€0.00</h1>
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 5px;">In Escrow: <span id="eur-locked">€0.00</span></p>
-                <button style="margin-top: 15px;" onclick="triggerDeposit('EUR')">+ Deposit €500</button>
-            </div>
-            <div class="card">
-                <div class="card-title">📐 DZD Core Balance <span style="color: var(--success);">Available</span></div>
-                <h1 id="dzd-balance">0.00 DA</h1>
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 5px;">In Escrow: <span id="dzd-locked">0.00 DA</span></p>
-                <button style="margin-top: 15px;" onclick="triggerDeposit('DZD')">+ Deposit 50k DA</button>
-            </div>
-        </div>
-
-        <!-- MID SECTION: BROADCAST FORM & TRANSACTION MATRIX -->
-        <div class="card">
-            <div class="card-title">📢 Broadcast Market Order Book</div>
-            <div class="grid-2" style="grid-template-columns: 2fr 1fr; gap: 15px; align-items: end;">
-                <div class="input-group" style="margin: 0;">
-                    <label>AMOUNT TO ESCROW (EUR)</label>
-                    <input type="number" id="form-amount" value="100">
-                </div>
-                <div class="input-group" style="margin: 0;">
-                    <label>EXCHANGE RATE (1€ = ? DA)</label>
-                    <input type="number" id="form-rate" value="240">
-                </div>
-            </div>
-            <button style="margin-top: 15px;" onclick="broadcastOffer()">Broadcast Sell & Lock</button>
-        </div>
-
-        <!-- BOTTOM SECTION: LIVE TRANSFERS LIFECYCLE -->
-        <div class="card">
-            <div class="card-title">📦 Your P2P Escrow Lifecycle Processes</div>
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Role/Counterparty</th>
-                        <th>Value Amount</th>
-                        <th>Exchange Rate</th>
-                        <th>Current State</th>
-                        <th>Action Processing Interface</th>
-                    </tr>
-                </thead>
-                <tbody id="orders-table-body">
-                    <!-- Dynamic Rows Insertion -->
-                </tbody>
-            </table>
-        </div>
+    <div class="tabpane active" id="pane-login">
+      <label>Email</label>
+      <input id="li_email" placeholder="you@example.com">
+      <label>Password</label>
+      <input id="li_password" type="password">
+      <button class="btn-primary btn-block" onclick="login()">Log in</button>
+      <div class="error-msg" id="loginError"></div>
     </div>
 
-    <!-- OPERATIONS STREAM SIDEBAR -->
-    <div class="stream-panel">
-        <div class="card-title" style="font-size: 0.9rem; letter-spacing: 1px;">SYSTEM OPERATIONS STREAM</div>
-        <div class="log-box" id="log-terminal">Awaiting setup sequence...</div>
+    <div class="tabpane" id="pane-register">
+      <div class="row">
+        <div><label>First name</label><input id="r_first"></div>
+        <div><label>Last name</label><input id="r_last"></div>
+      </div>
+      <label>Email</label>
+      <input id="r_email" placeholder="you@example.com">
+      <label>Phone number</label>
+      <input id="r_phone" placeholder="+2135550001234">
+      <label>Password</label>
+      <input id="r_password" type="password">
+      <div class="hint">10+ characters. This is a test environment — don't reuse a real password.</div>
+      <button class="btn-gold btn-block" onclick="register()">Create account</button>
+      <div class="error-msg" id="registerError"></div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap" id="app" style="display:none;">
+
+  <div class="kycbanner" id="kycBanner" style="display:none;">
+    <p>Identity verification is <b id="kycBannerStatus">not started</b> — you can browse the marketplace, but confirming an order requires a verified account.</p>
+    <button class="btn-gold" onclick="switchTab('kyc')">Verify identity</button>
+  </div>
+
+  <div class="tabbar">
+    <button class="tabbtn active" data-tab="wallet" onclick="switchTab('wallet')">Wallet</button>
+    <button class="tabbtn" data-tab="market" onclick="switchTab('market')">Marketplace</button>
+    <button class="tabbtn" data-tab="orders" onclick="switchTab('orders')">My orders</button>
+    <button class="tabbtn" data-tab="kyc" onclick="switchTab('kyc')">Identity verification</button>
+  </div>
+
+  <div class="tabpane active" id="tab-wallet">
+    <div class="card">
+      <h2>Balances</h2>
+      <div class="sub">Funds available to trade, and funds currently held in active escrow.</div>
+      <div class="wallet-grid" id="walletCards">
+        <div class="wcard"><div class="k">EUR</div><div class="v">—</div></div>
+        <div class="wcard"><div class="k">DZD</div><div class="v">—</div></div>
+      </div>
+      <div class="row" style="margin-top:18px;">
+        <div>
+          <label>Test deposit — currency</label>
+          <select id="depCurrency"><option>EUR</option><option>DZD</option></select>
+        </div>
+        <div>
+          <label>Amount (cents)</label>
+          <input id="depAmount" placeholder="10000 = 100.00">
+        </div>
+      </div>
+      <button class="btn-green btn-block" onclick="testDeposit()">Deposit (test only, not a real transfer)</button>
+    </div>
+  </div>
+
+  <div class="tabpane" id="tab-market">
+    <div class="card">
+      <h2>List EUR for sale</h2>
+      <div class="sub">This reserves the amount from your available balance immediately.</div>
+      <div class="row">
+        <div><label>Amount (cents)</label><input id="offerAmount" placeholder="10000 = 100.00"></div>
+        <div><label>Rate (DZD per EUR x100)</label><input id="offerRate" placeholder="32000 = 320.00"></div>
+      </div>
+      <button class="btn-gold btn-block" onclick="createOffer()">Create offer</button>
     </div>
 
-    <!-- FRONTEND RUNTIME ENGINE CONNECTOR -->
-    <script>
-        const API_BASE = 'http://localhost:5000/api';
-        let currentUserId = 'user_test_seller';
+    <div class="card">
+      <h2>Open offers <button class="btn-ghost" style="float:right; padding:5px 12px;" onclick="loadOffers()">Refresh</button></h2>
+      <div id="offersList"><div class="empty">Loading…</div></div>
+    </div>
+  </div>
 
-        function logToTerminal(message, type = 'info') {
-            const terminal = document.getElementById('log-terminal');
-            const timestamp = new Date().toLocaleTimeString();
-            let color = '#34d399';
-            if (type === 'error') color = '#ef4444';
-            if (type === 'success') color = '#60a5fa';
+  <div class="tabpane" id="tab-orders">
+    <div class="card">
+      <h2>My orders <button class="btn-ghost" style="float:right; padding:5px 12px;" onclick="loadOrders()">Refresh</button></h2>
+      <div id="ordersList"><div class="empty">Loading…</div></div>
+    </div>
+  </div>
 
-            terminal.innerHTML = `<div style="color: ${color}">[${timestamp}] ${message}</div>` + terminal.innerHTML;
-        }
+  <div class="tabpane" id="tab-kyc">
+    <div class="card">
+      <h2>Identity verification</h2>
+      <div class="sub">Current status: <span class="status" id="kycStatusBadge" style="margin-left:4px;"></span></div>
+      <label>Government ID (image or PDF)</label>
+      <input type="file" id="kycIdFile">
+      <label>Selfie</label>
+      <input type="file" id="kycSelfieFile">
+      <div class="hint">Demo only — files aren't actually uploaded to storage yet, this sends filenames as placeholders so you can see the status transition to pending review.</div>
+      <button class="btn-gold btn-block" onclick="submitKyc()">Submit for review</button>
+    </div>
+  </div>
 
-        function switchIdentity(userId) {
-            currentUserId = userId;
-            document.getElementById('identity-seller').classList.toggle('active', userId === 'user_test_seller');
-            document.getElementById('identity-buyer').classList.toggle('active', userId === 'user_test_buyer');
-            logToTerminal(`Switched workspace simulation context to: **${userId.toUpperCase()}**`, 'success');
-            refreshDashboard();
-        }
+  <div class="card">
+    <h2>Activity log</h2>
+    <div id="log"></div>
+  </div>
+</div>
 
-// 1. DATA REFRESH RETRIEVAL FROM EXPRESS POSTGRES
-        async function refreshDashboard() {
-            try {
-                // Fetch Wallets
-                const walletRes = await fetch(`${API_BASE}/wallets/${currentUserId}`);
-                if (walletRes.ok) {
-                    const data = await walletRes.json();
-                    const eurWallet = data.wallets.find(w => w.currency === 'EUR') || { balanceCents: 0, lockedCents: 0 };
-                    const dzdWallet = data.wallets.find(w => w.currency === 'DZD') || { balanceCents: 0, lockedCents: 0 };
+<script>
+const API = 'http://localhost:5000/api';
+let session = JSON.parse(localStorage.getItem('sarraf_session') || 'null');
 
-                    document.getElementById('eur-balance').innerText = `€${(eurWallet.balanceCents / 100).toFixed(2)}`;
-                    document.getElementById('eur-locked').innerText = `€${(eurWallet.lockedCents / 100).toFixed(2)}`;
-                    document.getElementById('dzd-balance').innerText = `${(dzdWallet.balanceCents / 100).toFixed(2)} DA`;
-                    document.getElementById('dzd-locked').innerText = `${(dzdWallet.lockedCents / 100).toFixed(2)} DA`;
-                }
-
-                // Fetch Offers from the active market book instead of Orders
-                const offersRes = await fetch(`${API_BASE}/offers`);
-                if (offersRes.ok) {
-                    const data = await offersRes.json();
-                    const tbody = document.getElementById('orders-table-body');
-                    tbody.innerHTML = '';
-
-                    // Check data.offers array returned by listActiveOffers inside offer.controller.ts
-                    if (!data.offers || data.offers.length === 0) {
-                        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted)">0 Active Escrow Lifecycle Contracts Detected</td></tr>`;
-                    } else {
-                        data.offers.forEach(offer => {
-                            const isOwner = offer.userId === currentUserId;
-                            const contextRole = offer.side === 'SELL' ? 'SELLER' : 'BUYER';
-                            
-                            let actionButton = '';
-                            if (isOwner) {
-                                actionButton = `<span style="color:var(--text-muted); font-size:0.85rem;">Your Offer (Broadcasting)</span>`;
-                            } else {
-                                // If acting as BUYER looking at a SELLER's offer, allow them to match it
-                                actionButton = `<button style="padding:5px 10px; font-size:0.8rem; background:var(--success)" onclick="logToTerminal('Matching logic placeholder clicked', 'info')">Accept & Lock DZD</button>`;
-                            }
-
-                            tbody.innerHTML += `
-                                <tr>
-                                    <td><strong>${contextRole}</strong> (${offer.userId === 'user_test_seller' ? 'Seller' : 'Buyer'})</td>
-                                    <td>€${(offer.amountCents / 100).toFixed(2)}</td>
-                                    <td>${offer.rate / 100} DA</td>
-                                    <td><span class="badge success">ACTIVE</span></td>
-                                    <td>${actionButton}</td>
-                                </tr>
-                            `;
-                        });
-                    }
-                }
-                logToTerminal(`Ledger Synchronized with PostgreSQL State successfully.`, 'info');
-            } catch (err) {
-                logToTerminal(`Synchronization Fail: ${err.message}`, 'error');
-            }
-        }
-
-        // 2. TRIGGER ACTIONS ENGINE CONNECTORS
-        async function triggerDeposit(currency) {
-            const amountVal = currency === 'EUR' ? 50000 : 5000000; // sending cents directly to match backend code!
-            try {
-                const response = await fetch(`${API_BASE}/wallets/test-deposit`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: currentUserId, currency, amountCents: amountVal })
-                });
-                const resData = await response.json();
-                if (response.ok) {
-                    logToTerminal(`[POST] /wallets/test-deposit -> Success Matrix Loaded!`, 'success');
-                    refreshDashboard();
-                } else {
-                    logToTerminal(`[POST] Deposit Rejected: ${resData.error}`, 'error');
-                }
-            } catch (error) {
-                logToTerminal(`Connection Error: ${error.message}`, 'error');
-            }
-        }
-
-        async function broadcastOffer() {
-            const amountCents = parseFloat(document.getElementById('form-amount').value) * 100;
-            const rate = parseFloat(document.getElementById('form-rate').value) * 100;
-
-            try {
-                const response = await fetch(`${API_BASE}/offers`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        userId: currentUserId,
-                        side: 'SELL',
-                        fromCurrency: 'EUR',
-                        toCurrency: 'DZD',
-                        rate: rate,
-                        amountCents: amountCents
-                    })
-                });
-                if (response.ok) {
-                    logToTerminal(`[POST] /offers -> Sell Order Broadcasted and Core Funds Locked in Escrow!`, 'success');
-                    // Automatically simulate buying step for development mapping if needed
-                    refreshDashboard();
-                } else {
-                    const err = await response.json();
-                    logToTerminal(`Broadcast Rejected: ${err.error}`, 'error');
-                }
-            } catch (x) { logToTerminal(`Error: ${x.message}`, 'error'); }
-        }
-
-        async function uploadPaymentProof(orderId) {
-            try {
-                const response = await fetch(`${API_BASE}/orders/${orderId}/proof`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ receiptStorageKey: "encrypted_s3_reference_key_prod_09" })
-                });
-                if(response.ok) {
-                    logToTerminal(`[POST] Proof Receipt Reference Added to Ledger.`, 'success');
-                    refreshDashboard();
-                }
-            } catch(e) { logToTerminal(e.message, 'error'); }
-        }
-
-        async function confirmReleaseEscrow(orderId) {
-            try {
-                const response = await fetch(`${API_BASE}/orders/${orderId}/confirm`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ sellerId: currentUserId })
-                });
-                if(response.ok) {
-                    logToTerminal(`[POST] Escrow Settled! EUR balance transferred to buyer instantly.`, 'success');
-                    refreshDashboard();
-                }
-            } catch(e) { logToTerminal(e.message, 'error'); }
-        }
-
-async function seedDatabase() {
-    logToTerminal("Initializing development users inside PostgreSQL...", 'info');
-    
-    try {
-        // 1. Change to /auth/register
-        const resSeller = await fetch(`${API_BASE}/auth/register`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                id: "user_test_seller",
-                email: "seller@test.com",
-                password: "password123",
-                phone: "0123456789"
-            })
-        });
-
-        // 2. Change to /auth/register
-        const resBuyer = await fetch(`${API_BASE}/auth/register`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                id: "user_test_buyer",
-                email: "buyer@test.com",
-                password: "password123",
-                phone: "0987654321"
-            })
-        });
-
-        logToTerminal("Dev accounts initialized in DB. Seeding initial funds...", 'success');
-        
-        await triggerDeposit('EUR'); 
-        switchIdentity('user_test_buyer');
-        await triggerDeposit('DZD'); 
-        switchIdentity('user_test_seller'); 
-        
-    } catch (error) {
-        logToTerminal(`Seeding failed: ${error.message}`, 'error');
-    }
+function log(msg, ok=true){
+  const el = document.getElementById('log');
+  const line = document.createElement('div');
+  line.className = 'logline ' + (ok ? 'ok' : 'err');
+  line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+  el.prepend(line);
 }
 
-        // Initialize display lifecycle loop
-        window.onload = refreshDashboard;
-    </script>
+async function api(method, path, body){
+  try{
+    const res = await fetch(API + path, { method, headers: {'Content-Type':'application/json'}, body: body ? JSON.stringify(body) : undefined });
+    const data = await res.json();
+    if(!res.ok){ log(`${method} ${path} -> ${res.status}: ${data.error || 'error'}`, false); return {ok:false, data}; }
+    log(`${method} ${path} -> ${res.status}`);
+    return {ok:true, data};
+  }catch(e){
+    log(`${method} ${path} -> network error (server reachable at ${API}?)`, false);
+    return {ok:false, data:null};
+  }
+}
+
+function switchAuthTab(tab){
+  document.querySelectorAll('[data-authtab]').forEach(b => b.classList.toggle('active', b.dataset.authtab===tab));
+  document.getElementById('pane-login').classList.toggle('active', tab==='login');
+  document.getElementById('pane-register').classList.toggle('active', tab==='register');
+}
+
+function switchTab(tab){
+  document.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab===tab));
+  document.querySelectorAll('.tabpane').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  if(tab==='wallet') loadWallet();
+  if(tab==='market') loadOffers();
+  if(tab==='orders') loadOrders();
+  if(tab==='kyc') loadKyc();
+}
+
+async function register(){
+  document.getElementById('registerError').textContent = '';
+  const body = {
+    firstName: document.getElementById('r_first').value,
+    lastName: document.getElementById('r_last').value,
+    email: document.getElementById('r_email').value,
+    phoneNumber: document.getElementById('r_phone').value,
+    password: document.getElementById('r_password').value,
+  };
+  if(Object.values(body).some(v => !v)){
+    document.getElementById('registerError').textContent = 'All fields are required.';
+    return;
+  }
+  const {ok, data} = await api('POST', '/auth/register', body);
+  if(!ok){ document.getElementById('registerError').textContent = data?.error || 'Registration failed'; return; }
+  document.getElementById('li_email').value = body.email;
+  document.getElementById('li_password').value = body.password;
+  switchAuthTab('login');
+  await login();
+}
+
+async function login(){
+  document.getElementById('loginError').textContent = '';
+  const email = document.getElementById('li_email').value;
+  const password = document.getElementById('li_password').value;
+  const {ok, data} = await api('POST', '/auth/login', {email, password});
+  if(!ok){ document.getElementById('loginError').textContent = data?.error || 'Login failed'; return; }
+  session = { token: data.token, user: data.user };
+  localStorage.setItem('sarraf_session', JSON.stringify(session));
+  enterApp();
+}
+
+function logout(){
+  session = null;
+  localStorage.removeItem('sarraf_session');
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('headerRight').style.display = 'none';
+  document.getElementById('authScreen').style.display = 'block';
+}
+
+function enterApp(){
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('headerRight').style.display = 'flex';
+  document.getElementById('userChip').textContent = `${session.user.firstName} ${session.user.lastName}`;
+  updateKycPill(session.user.kycStatus);
+  switchTab('wallet');
+}
+
+function updateKycPill(status){
+  const pill = document.getElementById('kycPill');
+  pill.textContent = status.replace('_',' ');
+  pill.className = 'kycpill ' + status;
+  const banner = document.getElementById('kycBanner');
+  if(status === 'VERIFIED'){ banner.style.display = 'none'; }
+  else{
+    banner.style.display = 'flex';
+    document.getElementById('kycBannerStatus').textContent = status === 'PENDING' ? 'pending review' : 'not started';
+  }
+}
+
+async function loadWallet(){
+  const {ok, data} = await api('GET', `/wallets/${session.user.id}`);
+  const el = document.getElementById('walletCards');
+  if(!ok || !data.wallets.length){ el.innerHTML = '<div class="empty">No wallets found</div>'; return; }
+  el.innerHTML = data.wallets.map(w => `
+    <div class="wcard">
+      <div class="k">${w.currency}</div>
+      <div class="v">${(w.balanceCents/100).toFixed(2)}</div>
+      <div class="locked">${(w.lockedCents/100).toFixed(2)} in escrow</div>
+    </div>`).join('');
+}
+
+async function testDeposit(){
+  const currency = document.getElementById('depCurrency').value;
+  const amountCents = parseInt(document.getElementById('depAmount').value, 10);
+  if(!amountCents){ log('Enter an amount first', false); return; }
+  await api('POST', '/wallets/test-deposit', {userId: session.user.id, currency, amountCents});
+  loadWallet();
+}
+
+async function createOffer(){
+  const amountCents = parseInt(document.getElementById('offerAmount').value, 10);
+  const rate = parseInt(document.getElementById('offerRate').value, 10);
+  if(!amountCents || !rate){ log('Enter amount and rate first', false); return; }
+  await api('POST', '/offers', {
+    userId: session.user.id, side: 'SELL', fromCurrency: 'EUR', toCurrency: 'DZD',
+    rate, amountCents, minAmountCents: amountCents, maxAmountCents: amountCents, paymentMethod: 'CCP'
+  });
+  loadWallet();
+  loadOffers();
+}
+
+async function loadOffers(){
+  const {ok, data} = await api('GET', '/offers');
+  const el = document.getElementById('offersList');
+  if(!ok || !data.offers.length){ el.innerHTML = '<div class="empty">No active offers</div>'; return; }
+  el.innerHTML = data.offers.map(o => `
+    <div class="offer">
+      <div class="top">
+        <span class="amt">${(o.amountCents/100).toFixed(2)} EUR <span style="color:var(--slate); font-weight:400;">@ ${(o.rate/100).toFixed(2)} DZD/EUR</span></span>
+        ${o.userId===session.user.id
+          ? '<span class="meta">Your offer</span>'
+          : `<button class="btn-green" style="padding:7px 14px;" onclick="acceptOffer('${o.id}')">Accept as buyer</button>`}
+      </div>
+      <div class="meta mono">seller ${o.userId.slice(0,8)}... . offer ${o.id.slice(0,8)}...</div>
+    </div>`).join('');
+}
+
+async function acceptOffer(offerId){
+  const {ok} = await api('POST', '/orders', {offerId, buyerId: session.user.id});
+  if(ok){ loadOffers(); switchTab('orders'); }
+}
+
+async function loadOrders(){
+  const {ok, data} = await api('GET', `/orders?userId=${session.user.id}`);
+  const el = document.getElementById('ordersList');
+  if(!ok || !data.orders.length){ el.innerHTML = '<div class="empty">No orders yet</div>'; return; }
+  el.innerHTML = data.orders.map(o => {
+    const isBuyer = o.buyerId === session.user.id;
+    const isSeller = o.sellerId === session.user.id;
+    let action = '';
+    if(isBuyer && ['MATCHED','WAITING_FOR_DZD'].includes(o.status)){
+      action = `<input type="file" id="proof_${o.id}" style="margin-top:8px; display:block;">
+        <button class="btn-ghost" style="margin-top:8px;" onclick="uploadProof('${o.id}')">Upload payment proof</button>`;
+    }
+    if(isSeller && o.status==='PROOF_UPLOADED'){
+      action = `<button class="btn-green" style="margin-top:8px;" onclick="confirmOrder('${o.id}')">Confirm received, release EUR</button>`;
+    }
+    return `
+      <div class="order">
+        <div class="top">
+          <span class="amt">${(o.amountCents/100).toFixed(2)} EUR <span style="color:var(--slate); font-weight:400;">${isBuyer?'buying':'selling'}</span></span>
+          <span class="status ${o.status}">${o.status.replace(/_/g,' ')}</span>
+        </div>
+        <div class="meta mono">order ${o.id.slice(0,8)}...</div>
+        ${action}
+      </div>`;
+  }).join('');
+}
+
+async function uploadProof(orderId){
+  const f = document.getElementById('proof_'+orderId);
+  const filename = f.files.length ? f.files[0].name : `proof-${Date.now()}.jpg`;
+  await api('POST', `/orders/${orderId}/proof`, {receiptStorageKey: `receipts/${filename}`});
+  loadOrders();
+}
+
+async function confirmOrder(orderId){
+  await api('POST', `/orders/${orderId}/confirm`, {sellerId: session.user.id});
+  loadOrders();
+  loadWallet();
+}
+
+async function loadKyc(){
+  const {ok, data} = await api('GET', `/kyc/${session.user.id}`);
+  const status = ok ? data.kyc.status : 'NOT_STARTED';
+  document.getElementById('kycStatusBadge').textContent = status.replace(/_/g,' ');
+  document.getElementById('kycStatusBadge').className = 'status ' + status;
+}
+
+async function submitKyc(){
+  const idFile = document.getElementById('kycIdFile');
+  const selfieFile = document.getElementById('kycSelfieFile');
+  if(!idFile.files.length || !selfieFile.files.length){ log('Select both files first', false); return; }
+  const {ok} = await api('POST', '/kyc/submit', {
+    userId: session.user.id,
+    idDocumentStorageKey: `kyc/${idFile.files[0].name}`,
+    selfieStorageKey: `kyc/${selfieFile.files[0].name}`,
+  });
+  if(ok){
+    session.user.kycStatus = 'PENDING';
+    localStorage.setItem('sarraf_session', JSON.stringify(session));
+    updateKycPill('PENDING');
+    loadKyc();
+  }
+}
+
+if(session){ enterApp(); }
+</script>
+
 </body>
 </html>

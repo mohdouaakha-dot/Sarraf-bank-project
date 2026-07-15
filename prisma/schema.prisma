@@ -38,16 +38,16 @@ enum OrderStatus {
 
 model User {
   id              String    @id @default(uuid())
+  firstName       String
+  lastName        String
   email           String    @unique
   passwordHash    String
   phoneNumber     String    @unique
   role            Role      @default(USER)
 
-  // Reputation — safe to keep directly on User, not sensitive
   trustScore      Int       @default(100)
   totalTrades     Int       @default(0)
 
-  // KYC is a STATUS reference only — no raw ID/biometric data lives here
   kycStatus       KycStatus @default(NOT_STARTED)
 
   createdAt       DateTime  @default(now())
@@ -63,38 +63,38 @@ model User {
   auditLogs       AuditLog[]
 }
 
-// One row per user. Holds ONLY a reference to the KYC provider's
-// record — never raw ID numbers, document images, or biometric data.
-// Those stay inside the KYC provider's own compliant storage (Sumsub/
-// Onfido/Veriff etc). This is what keeps your DB out of scope for
-// handling regulated identity documents directly.
+// Reference only. idDocumentStorageKey / selfieStorageKey point at files in
+// encrypted object storage (or, for now, a local uploads folder while
+// testing) — never store the raw document, extracted ID number, or
+// biometric data directly on this row. provider/providerApplicantId stay
+// null until you plug in a real KYC provider (Sumsub/Onfido/Veriff); until
+// then, status starts PENDING and gets flipped manually by an admin.
 model KycVerification {
-  id                String    @id @default(uuid())
-  userId            String    @unique
-  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                  String    @id @default(uuid())
+  userId              String    @unique
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  provider          String    // e.g. "sumsub"
-  providerApplicantId String  @unique // the provider's own reference ID
-  status            KycStatus @default(PENDING)
-  reviewedAt        DateTime?
+  idDocumentStorageKey String?
+  selfieStorageKey      String?
 
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  provider            String?
+  providerApplicantId  String?   @unique
+  status              KycStatus @default(PENDING)
+  reviewedAt          DateTime?
+
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 }
 
-// Payment routing handles. The account number itself is stored
-// ENCRYPTED (encrypt in application code before writing — see note
-// below). Only a masked display value ("**** 4821") is ever shown
-// to the frontend directly.
 model PaymentAccount {
   id              String   @id @default(uuid())
   userId          String
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  type            String   // "CCP", "EDAHABIA", "PAYSERA", "WISE", "REVOLUT"
+  type            String
   currency        Currency
-  encryptedValue  String   // ciphertext — never store plaintext account numbers
-  maskedDisplay   String   // e.g. "CCP •••• 7412" — safe to show in UI
+  encryptedValue  String
+  maskedDisplay   String
   isVerified      Boolean  @default(false)
   createdAt       DateTime @default(now())
 
@@ -105,8 +105,8 @@ model Wallet {
   id           String   @id @default(uuid())
   userId       String
   currency     Currency
-  balanceCents Int      @default(0) // available
-  lockedCents  Int      @default(0) // reserved in active escrow
+  balanceCents Int      @default(0)
+  lockedCents  Int      @default(0)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -118,10 +118,10 @@ model Wallet {
 model Offer {
   id             String   @id @default(uuid())
   userId         String
-  side           String   // "BUY" or "SELL"
+  side           String
   fromCurrency   Currency
   toCurrency     Currency
-  rate           Int      // rate * 100, e.g. 320.50 -> 32050
+  rate           Int
   amountCents    Int
   minAmountCents Int
   maxAmountCents Int
@@ -142,8 +142,6 @@ model Order {
   fiatAmount   Int
   status       OrderStatus @default(LISTED)
 
-  // Reference only — the actual receipt image lives in encrypted
-  // object storage (e.g. private S3 bucket), not in the database.
   receiptStorageKey String?
   ocrVerified       Boolean @default(false)
 
@@ -169,8 +167,6 @@ model Dispute {
   raisedBy    User     @relation(fields: [raisedById], references: [id])
 }
 
-// Append-only. Application code must only INSERT here — never
-// update or delete audit rows.
 model AuditLog {
   id        String   @id @default(uuid())
   userId    String
