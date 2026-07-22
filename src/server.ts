@@ -18,7 +18,7 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// Serve all static files from the 'public' directory
+// Serve static files from the root public directory
 app.use(express.static('public'));
 
 app.use('/api/auth', authRoutes);
@@ -28,9 +28,9 @@ app.use('/api/wallets', walletRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/kyc', kycRoutes);
 
-// Route root URL '/' directly to your public/index.html file
+// Fix path using process.cwd() so it looks in root/public/index.html
 app.get('/', (req: Request, res: Response) => {
-  res.sendFile(path.resolve('public/index.html'));
+  res.sendFile(path.resolve(process.cwd(), 'public/index.html'));
 });
 
 app.listen(Number(PORT), '0.0.0.0', () => {
