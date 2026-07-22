@@ -227,7 +227,7 @@
 </div>
 
 <script>
-const API = 'http://localhost:5000/api';
+const API = window.location.origin + '/api';
 let session = JSON.parse(localStorage.getItem('sarraf_session') || 'null');
 
 function log(msg, ok=true){
@@ -239,16 +239,23 @@ function log(msg, ok=true){
 }
 
 async function api(method, path, body){
-  try{
-    const res = await fetch(API + path, { method, headers: {'Content-Type':'application/json'}, body: body ? JSON.stringify(body) : undefined });
-    const data = await res.json();
-    if(!res.ok){ log(`${method} ${path} -> ${res.status}: ${data.error || 'error'}`, false); return {ok:false, data}; }
-    log(`${method} ${path} -> ${res.status}`);
-    return {ok:true, data};
-  }catch(e){
-    log(`${method} ${path} -> network error (server reachable at ${API}?)`, false);
-    return {ok:false, data:null};
-  }
+    try {
+        const res = await fetch(API + path, { 
+            method, 
+            headers: {
+                'Content-Type': 'application/json',
+                'ngrok-skip-browser-warning': 'true'
+            }, 
+            body: body ? JSON.stringify(body) : undefined 
+        });
+        const data = await res.json();
+        if(!res.ok){ log(`${method} ${path} -> ${res.status}: ${data.error || 'error'}`, false); return {ok:false, data}; }
+        log(`${method} ${path} -> ${res.status}`);
+        return {ok:true, data};
+    } catch(e) {
+        log(`${method} ${path} -> network error (server reachable at ${API}?)`, false);
+        return {ok:false, data:null};
+    }
 }
 
 function switchAuthTab(tab){
