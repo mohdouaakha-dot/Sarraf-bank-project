@@ -25,11 +25,11 @@ app.use('/api/wallets', walletRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/kyc', kycRoutes);
 
-
 app.get('/', (req: Request, res: Response) => {
   res.json({ message: "Welcome to the Sarraf Marketplace API" });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is successfully running on http://localhost:${PORT}`);
+// Added '0.0.0.0' so cloud providers like Render accept incoming traffic
+app.listen(Number(PORT), '0.0.0.0', () => {
+  console.log(`Server is successfully running on port ${PORT}`);
 });
