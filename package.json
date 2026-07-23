@@ -3,12 +3,21 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+<<<<<<< HEAD
   "scripts": {
     "build": "npx prisma generate && npx prisma migrate deploy",
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "node --watch --experimental-strip-types src/server.ts",
     "start": "node --experimental-strip-types src/server.ts"
   },
+=======
+"scripts": {
+  "build": "npx prisma generate && npx prisma migrate deploy",
+  "test": "echo \"Error: no test specified\" && exit 1",
+  "dev": "node --watch --experimental-strip-types src/server.ts",
+  "start": "node --experimental-strip-types src/server.ts"
+},
+>>>>>>> 735282954885a453aa9684f3b83d27ba7e65363b
   "keywords": [],
   "author": "",
   "license": "ISC",
