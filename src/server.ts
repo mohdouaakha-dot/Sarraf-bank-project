@@ -3,7 +3,8 @@ import type { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
-import fs from 'fs';
+import { fileURLToPath } from 'url';
+
 import authRoutes from './routes/auth.routes.ts';
 import paymentRoutes from './routes/payment.routes.ts';
 import offerRoutes from './routes/offer.routes.ts';
@@ -16,9 +17,15 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const publicPath = path.join(__dirname, '../public');
+
 app.use(cors());
 app.use(express.json());
-app.use(express.static('Public'));
+
+// Serve static assets from public folder
+app.use(express.static(publicPath));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/payment', paymentRoutes);
@@ -27,28 +34,11 @@ app.use('/api/wallets', walletRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/kyc', kycRoutes);
 
+// Root route
 app.get('/', (req: Request, res: Response) => {
-  const resolvedPath = path.resolve(process.cwd(), 'Public/index.html');
-  const exists = fs.existsSync(resolvedPath);
-
-  if (!exists) {
-    let publicDirContents: string[] | string = 'public/ does not exist at all';
-    try {
-      publicDirContents = fs.readdirSync(path.resolve(process.cwd(), 'public'));
-    } catch (e) {
-      // leave default message
-    }
-    return res.status(500).json({
-      debug: true,
-      cwd: process.cwd(),
-      lookingFor: resolvedPath,
-      publicDirContents,
-    });
-  }
-
-  res.sendFile(resolvedPath);
+  res.sendFile(path.join(publicPath, 'index.html'));
 });
 
 app.listen(Number(PORT), '0.0.0.0', () => {
-  console.log(`Server is successfully running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
