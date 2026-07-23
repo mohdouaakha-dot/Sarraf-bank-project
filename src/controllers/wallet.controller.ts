@@ -26,7 +26,13 @@ export const testDeposit = async (req: Request, res: Response) => {
 
 // GET /api/wallet/:userId
 export const getWallets = async (req: Request, res: Response) => {
-  const { userId } = req.params;
-  const wallets = await prisma.wallet.findMany({ where: { userId } });
-  return res.status(200).json({ success: true, wallets });
+  try {
+    const userId = String(req.params.userId);
+
+    const wallets = await prisma.wallet.findMany({ where: { userId } });
+    return res.status(200).json({ success: true, wallets });
+  } catch (error) {
+    console.error('Error fetching wallets:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
 };
