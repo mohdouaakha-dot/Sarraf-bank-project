@@ -3,7 +3,6 @@ import type { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
-import { fileURLToPath } from 'url';
 
 import authRoutes from './routes/auth.routes.ts';
 import paymentRoutes from './routes/payment.routes.ts';
@@ -17,9 +16,8 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const publicPath = path.join(__dirname, '../public');
+// Resolve public folder relative to current working directory (project root)
+const publicPath = path.resolve(process.cwd(), 'public');
 
 app.use(cors());
 app.use(express.json());
@@ -34,7 +32,7 @@ app.use('/api/wallets', walletRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/kyc', kycRoutes);
 
-// Root route
+// Root route to serve index.html
 app.get('/', (req: Request, res: Response) => {
   res.sendFile(path.join(publicPath, 'index.html'));
 });
