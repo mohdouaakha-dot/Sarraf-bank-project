@@ -18,7 +18,7 @@ const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static('Public'));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/payment', paymentRoutes);
@@ -28,7 +28,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/kyc', kycRoutes);
 
 app.get('/', (req: Request, res: Response) => {
-  const resolvedPath = path.resolve(process.cwd(), 'public/index.html');
+  const resolvedPath = path.resolve(process.cwd(), 'Public/index.html');
   const exists = fs.existsSync(resolvedPath);
 
   if (!exists) {
