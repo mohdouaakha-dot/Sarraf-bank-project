@@ -1,12 +1,8 @@
-import { Request, Response, NextFunction } from 'express';
+﻿import type { Request, Response, NextFunction } from 'express';
 
 export function requireAdmin(req: Request, res: Response, next: NextFunction) {
-  // Assumes authenticate middleware has already attached user to req
-  const user = (req as any).user;
-
-  if (!user || user.role !== 'ADMIN') {
-    return res.status(403).json({ error: 'Access denied: Admin privileges required' });
+  if (!req.user || req.user.role !== 'ADMIN') {
+    return res.status(403).json({ error: 'Forbidden: Admin access required' });
   }
-
   next();
 }
