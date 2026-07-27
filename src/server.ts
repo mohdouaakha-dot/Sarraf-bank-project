@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 import type { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -40,5 +40,5 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 app.listen(Number(PORT), '0.0.0.0', () => {
-  console.log(Server running on port );
+  console.log(`Server running on port ${PORT}`);
 });
