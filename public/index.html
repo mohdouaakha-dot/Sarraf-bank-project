@@ -1,3 +1,14 @@
+<script>
+  // Automatic redirect if already logged in as ADMIN
+  (function checkAdminAutoRedirect() {
+    try {
+      const sess = JSON.parse(localStorage.getItem('sarraf_session') || 'null');
+      if (sess && sess.user && sess.user.role === 'ADMIN' && !window.location.pathname.includes('admin.html')) {
+        window.location.href = '/admin.html';
+      }
+    } catch(e) {}
+  })();
+</script>
 <!DOCTYPE html>
 <html lang="en">
 <head>
