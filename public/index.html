@@ -107,6 +107,47 @@
   .error-msg{color:var(--coral); font-size:12.5px; margin-top:10px;}
   .hint{font-size:11.5px; color:var(--slate); margin-top:6px;}
 </style>
+<script>
+  // 1. Instant check on page load: If already logged in as ADMIN, send straight to /admin.html
+  (function checkAdminOnLoad() {
+    try {
+      const session = JSON.parse(localStorage.getItem('sarraf_session') || 'null');
+      if (session && session.user && session.user.role === 'ADMIN') {
+        if (!window.location.pathname.endsWith('/admin.html')) {
+          window.location.href = '/admin.html';
+        }
+      }
+    } catch(e) {}
+  })();
+
+  // 2. Intercept fetch responses globally to catch login and redirect ADMIN instantly
+  const originalFetch = window.fetch;
+  window.fetch = async function(...args) {
+    const response = await originalFetch.apply(this, args);
+    const clone = response.clone();
+    
+    try {
+      const url = typeof args[0] === 'string' ? args[0] : args[0]?.url || '';
+      if (url.includes('/login') || url.includes('/auth')) {
+        const data = await clone.json();
+        if (data && data.token && data.user) {
+          // Store session
+          localStorage.setItem('sarraf_session', JSON.stringify({
+            token: data.token,
+            user: data.user
+          }));
+
+          // Direct Admin Redirect
+          if (data.user.role === 'ADMIN') {
+            window.location.href = '/admin.html';
+          }
+        }
+      }
+    } catch (err) {}
+    
+    return response;
+  };
+</script>
 </head>
 <body>
 
@@ -485,3 +526,4 @@ if(session){ enterApp(); }
 
 </body>
 </html>
+
