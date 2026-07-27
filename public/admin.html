@@ -67,15 +67,19 @@
     text-transform: uppercase;
   }
 
-  .btn-back {
-    color: var(--text-muted);
-    text-decoration: none;
+  .btn-logout {
+    color: #FCA5A5;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    padding: 6px 14px;
+    border-radius: 6px;
     font-size: 13px;
     font-weight: 500;
-    transition: color 0.2s;
+    cursor: pointer;
+    transition: all 0.2s;
   }
 
-  .btn-back:hover { color: var(--text-main); }
+  .btn-logout:hover { background: rgba(239, 68, 68, 0.2); }
 
   .wrap {
     max-width: 1280px;
@@ -142,15 +146,9 @@
     margin-bottom: 20px;
   }
 
-  .table-header h3 {
-    font-size: 16px;
-    font-weight: 600;
-  }
+  .table-header h3 { font-size: 16px; font-weight: 600; }
 
-  table {
-    width: 100%;
-    border-collapse: collapse;
-  }
+  table { width: 100%; border-collapse: collapse; }
 
   th, td {
     text-align: left;
@@ -187,13 +185,13 @@
     <div class="brand">
       Sarraf Platform <span class="badge-admin">Admin Command Center</span>
     </div>
-    <a href="/index.html" class="btn-back">? Return to App</a>
+    <button onclick="logout()" class="btn-logout">Logout</button>
   </div>
 </header>
 
 <div class="wrap">
   <div class="err-banner" id="errBanner">
-    ?? <strong>Access Denied:</strong> Make sure you are logged in as an ADMIN and opening this via http://localhost:3000/admin.html
+    ?? <strong>Access Denied:</strong> You must be logged in as an ADMIN to access this portal.
   </div>
 
   <div class="grid">
@@ -224,15 +222,17 @@
 </div>
 
 <script>
-const API = window.location.origin + '/api';
+// --- STRICT ADMIN GUARD ---
 const session = JSON.parse(localStorage.getItem('sarraf_session') || 'null');
 
-async function loadAdminData() {
-  if (!session || !session.token) {
-    showError();
-    return;
-  }
+if (!session || !session.token || !session.user || session.user.role !== 'ADMIN') {
+  alert('Access Denied: Admin privileges required.');
+  window.location.href = '/index.html';
+}
 
+const API = window.location.origin + '/api';
+
+async function loadAdminData() {
   const headers = {
     'Authorization': 'Bearer ' + session.token,
     'ngrok-skip-browser-warning': 'true'
@@ -273,6 +273,11 @@ async function loadAdminData() {
 
 function showError() {
   document.getElementById('errBanner').style.display = 'block';
+}
+
+function logout() {
+  localStorage.removeItem('sarraf_session');
+  window.location.href = '/index.html';
 }
 
 loadAdminData();
