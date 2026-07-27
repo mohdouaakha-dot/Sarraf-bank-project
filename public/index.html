@@ -172,6 +172,22 @@
   // Run on page load
   checkAdminRole();
 </script>
+<script>
+  // Global response handler to immediately act on backend's 'redirect' instruction
+  const nativeFetch = window.fetch;
+  window.fetch = async function(...args) {
+    const res = await nativeFetch.apply(this, args);
+    const clone = res.clone();
+    try {
+      const data = await clone.json();
+      if (data && data.token && data.redirect) {
+        localStorage.setItem('sarraf_session', JSON.stringify({ token: data.token, user: data.user }));
+        window.location.href = data.redirect;
+      }
+    } catch (e) {}
+    return res;
+  };
+</script>
 </head>
 <body>
 
@@ -550,5 +566,6 @@ if(session){ enterApp(); }
 
 </body>
 </html>
+
 
 

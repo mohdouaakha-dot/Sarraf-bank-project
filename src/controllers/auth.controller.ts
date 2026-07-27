@@ -1,4 +1,4 @@
-﻿import type { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import prisma from '../prisma.ts';
@@ -69,10 +69,21 @@ export const login = async (req: Request, res: Response): Promise<Response> => {
       { expiresIn: '24h' }
     );
 
+    // Backend-driven redirection target based on role
+    const redirectTarget = user.role === 'ADMIN' ? '/admin.html' : '/dashboard.html';
+
     return res.json({
       message: 'Login successful.',
       token,
-      user: { id: user.id, firstName: user.firstName, lastName: user.lastName, email: user.email, role: user.role, kycStatus: user.kycStatus }
+      redirect: redirectTarget,
+      user: { 
+        id: user.id, 
+        firstName: user.firstName, 
+        lastName: user.lastName, 
+        email: user.email, 
+        role: user.role, 
+        kycStatus: user.kycStatus 
+      }
     });
   } catch (error: any) {
     return res.status(500).json({ error: error.message || 'Login failed.' });
