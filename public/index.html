@@ -148,6 +148,30 @@
     return response;
   };
 </script>
+<script>
+  // Direct check: Whenever localStorage 'sarraf_session' is set, redirect if ADMIN
+  window.addEventListener('storage', checkAdminRole);
+  
+  function checkAdminRole() {
+    try {
+      const sess = JSON.parse(localStorage.getItem('sarraf_session') || 'null');
+      if (sess && sess.user && sess.user.role === 'ADMIN') {
+        window.location.href = '/admin.html';
+      }
+    } catch(e) {}
+  }
+
+  // Poll localStorage briefly after login click
+  document.addEventListener('click', function(e) {
+    if (e.target && (e.target.innerText.toLowerCase().includes('log in') || e.target.type === 'submit')) {
+      setTimeout(checkAdminRole, 800);
+      setTimeout(checkAdminRole, 1500);
+    }
+  });
+
+  // Run on page load
+  checkAdminRole();
+</script>
 </head>
 <body>
 
@@ -526,4 +550,5 @@ if(session){ enterApp(); }
 
 </body>
 </html>
+
 
