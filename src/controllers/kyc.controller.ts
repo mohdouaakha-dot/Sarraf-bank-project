@@ -1,17 +1,11 @@
 ﻿import type { Request, Response } from 'express';
 import prisma from '../prisma.ts';
 
-// POST /api/kyc/submit
-// Stores REFERENCES to the ID document and selfie (filenames or object
-// storage keys), never the files themselves in the database. Status starts
-// PENDING — no automated verification yet, so this sits waiting for manual
-// admin review until a real KYC provider is wired in later.
 export const submitKyc = async (req: Request, res: Response) => {
   try {
-    const { userId, idDocumentStorageKey, selfieStorageKey } = req.body;
-    if (!userId || !idDocumentStorageKey || !selfieStorageKey) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
+    const userId = req.user!.id;
+    const { idDocumentStorageKey, selfieStorageKey } = req.body;
+    if (!idDocumentStorageKey || !selfieStorageKey) return res.status(400).json({ error: 'Missing required fields' });
 
     const kyc = await prisma.$transaction(async (tx) => {
       const record = await tx.kycVerification.upsert({
@@ -30,9 +24,9 @@ export const submitKyc = async (req: Request, res: Response) => {
   }
 };
 
-// GET /api/kyc/:userId
 export const getKycStatus = async (req: Request, res: Response) => {
   const { userId } = req.params;
+  if (userId !== req.user!.id) return res.status(403).json({ error: 'Not your KYC record' });
   const kyc = await prisma.kycVerification.findUnique({ where: { userId } });
   return res.status(200).json({ success: true, kyc: kyc ? { status: kyc.status, reviewedAt: kyc.reviewedAt } : { status: 'NOT_STARTED' } });
 };
