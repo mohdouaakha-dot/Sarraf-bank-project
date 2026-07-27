@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sarraf — Admin Console</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0E1B2A; --paper: #F4F1E8; --gold: #C9A24B;
+    --green: #1E7A5C; --coral: #D9584F; --slate: #586374;
+    --line: rgba(14,27,42,0.1);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: 'Inter', sans-serif; font-size: 14px; }
+  header { background: var(--ink); color: #fff; padding: 16px 28px; border-bottom: 2px solid var(--gold); }
+  .header-inner { max-width: 1120px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
+  .brand { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 600; color: var(--gold); }
+  .wrap { max-width: 1120px; margin: 32px auto; padding: 0 28px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 28px; }
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 20px; }
+  .card .lbl { font-size: 11px; text-transform: uppercase; color: var(--slate); font-weight: 600; letter-spacing: .05em; }
+  .card .val { font-family: 'IBM Plex Mono', monospace; font-size: 28px; font-weight: 600; margin-top: 6px; }
+  .table-card { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 20px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); font-size: 13px; }
+  th { font-size: 11px; text-transform: uppercase; color: var(--slate); }
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+  .err-banner { background: rgba(217,88,79,0.1); border: 1px solid var(--coral); color: var(--coral); padding: 12px; border-radius: 6px; margin-bottom: 20px; display: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="brand">Sarraf Admin Console ??</div>
+    <div><a href="/index.html" style="color:var(--paper); text-decoration:none; font-weight:500;">Back to App</a></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="err-banner" id="errBanner">Access Denied: You must be logged in as an ADMIN to view this dashboard.</div>
+
+  <div class="grid">
+    <div class="card"><div class="lbl">Total Users</div><div class="val" id="statUsers">—</div></div>
+    <div class="card"><div class="lbl">Active Offers</div><div class="val" id="statOffers">—</div></div>
+    <div class="card"><div class="lbl">Pending KYC</div><div class="val" id="statKyc">—</div></div>
+    <div class="card"><div class="lbl">Total Orders</div><div class="val" id="statOrders">—</div></div>
+  </div>
+
+  <div class="table-card">
+    <h3>Pending KYC Reviews</h3>
+    <table>
+      <thead>
+        <tr><th>User</th><th>Email</th><th>User ID</th><th>Status</th></tr>
+      </thead>
+      <tbody id="kycTable">
+        <tr><td colspan="4" style="text-align:center; color:var(--slate);">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const API = window.location.origin + '/api';
+const session = JSON.parse(localStorage.getItem('sarraf_session') || 'null');
+
+async function loadAdminData() {
+  if (!session || !session.token) {
+    showError();
+    return;
+  }
+
+  const headers = {
+    'Authorization': 'Bearer ' + session.token,
+    'ngrok-skip-browser-warning': 'true'
+  };
+
+  try {
+    // 1. Fetch Stats
+    const resStats = await fetch(API + '/admin/stats', { headers });
+    if (!resStats.ok) { showError(); return; }
+    const stats = await resStats.json();
+
+    document.getElementById('statUsers').textContent = stats.totalUsers;
+    document.getElementById('statOffers').textContent = stats.activeOffers;
+    document.getElementById('statKyc').textContent = stats.pendingKyc;
+    document.getElementById('statOrders').textContent = stats.totalOrders;
+
+    // 2. Fetch Pending KYC
+    const resKyc = await fetch(API + '/admin/kyc/pending', { headers });
+    const kycData = await resKyc.json();
+    
+    const tbody = document.getElementById('kycTable');
+    if (!kycData.pendingKyc || kycData.pendingKyc.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--slate);">No pending KYC reviews</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = kycData.pendingKyc.map(k => 
+      <tr>
+        <td>\ \</td>
+        <td>\</td>
+        <td class="mono">\...</td>
+        <td><b style="color:var(--gold);">PENDING</b></td>
+      </tr>
+    ).join('');
+
+  } catch (e) {
+    showError();
+  }
+}
+
+function showError() {
+  document.getElementById('errBanner').style.display = 'block';
+}
+
+loadAdminData();
+</script>
+</body>
+</html>
