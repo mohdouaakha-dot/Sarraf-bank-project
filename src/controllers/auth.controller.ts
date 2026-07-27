@@ -1,4 +1,4 @@
-import type { Request, Response } from 'express';
+﻿import type { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import prisma from '../prisma.ts';
@@ -70,7 +70,7 @@ export const login = async (req: Request, res: Response): Promise<Response> => {
     );
 
     // Backend-driven redirection target based on role
-    const redirectTarget = user.role === 'ADMIN' ? '/admin.html' : '/dashboard.html';
+    const redirectTarget = user.role === 'ADMIN' ? '/admin.html' : '/index.html';
 
     return res.json({
       message: 'Login successful.',
@@ -89,3 +89,4 @@ export const login = async (req: Request, res: Response): Promise<Response> => {
     return res.status(500).json({ error: error.message || 'Login failed.' });
   }
 };
+
