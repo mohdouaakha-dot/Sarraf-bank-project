@@ -11,6 +11,7 @@ import walletRoutes from './routes/wallet.routes.ts';
 import orderRoutes from './routes/order.routes.ts';
 import kycRoutes from './routes/kyc.routes.ts';
 import adminRoutes from './routes/admin.routes.ts';
+import adminRoutes from './routes/admin.routes.ts';
 
 dotenv.config();
 
@@ -32,6 +33,7 @@ app.use('/api/offers', offerRoutes);
 app.use('/api/wallets', walletRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/kyc', kycRoutes);
+app.use('/api/admin', adminRoutes);
 app.use('/api/admin', adminRoutes);
 
 // Root route

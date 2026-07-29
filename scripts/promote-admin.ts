@@ -1,16 +1,11 @@
-﻿import prisma from './src/prisma.ts';
+﻿import prisma from '../src/prisma.ts';
 
-async function makeAdmin() {
-  const email = 'moh.douaakha@gmail.com';
-  const updated = await prisma.user.update({
-    where: { email },
-    data: { role: 'ADMIN' }
-  });
-  console.log('✅ Successfully updated user role to ADMIN:', updated.email, 'Role:', updated.role);
-  process.exit(0);
+const email = process.argv[2];
+if (!email) {
+  console.error('Usage: node --experimental-strip-types scripts/promote-admin.ts <email>');
+  process.exit(1);
 }
 
-makeAdmin().catch(err => {
-  console.error('❌ Failed to update user:', err.message);
-  process.exit(1);
-});
+const user = await prisma.user.update({ where: { email }, data: { role: 'ADMIN' } });
+console.log(`${user.email} is now ADMIN`);
+process.exit(0);
