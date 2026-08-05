@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sarraf � Admin Command Center</title>
+<title>Sarraf — Admin Command Center</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -185,7 +185,7 @@
     <div class="brand">
       Sarraf Platform <span class="badge-admin">Admin Command Center</span>
     </div>
-    <button onclick="logout()" class="btn-logout">Logout</button>
+    <button onclick="localStorage.clear(); sessionStorage.clear(); window.location.href='/index.html';" class="btn-logout">Logout</button>
   </div>
 </header>
 
@@ -284,3 +284,4 @@ loadAdminData();
 </script>
 </body>
 </html>
+
